@@ -5,7 +5,7 @@ Resources:
   MyS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: my-unique-bucket-name-12345  # Replace with your unique bucket name
+      BucketName: my-s3-bucket-001  # Replace with your unique bucket name
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
