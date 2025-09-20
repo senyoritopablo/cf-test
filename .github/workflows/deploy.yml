@@ -1,0 +1,34 @@
+name: Deploy CloudFormation Stack
+
+on:
+  push:
+    branches:
+      - main
+      
+jobs:
+  deploy:
+    runs-on: ubunto-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: AKIA565XTQAQBLGBMMUZ
+          aws-secret-access-key: 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
+          aws-region: us-east-1
+
+      - name: Deploy Cloudfornation Stack
+        run: |
+          aws cloudformation deploy \
+            --template-file tenmplate/create-s3-bucket.yml \
+            --stack-name my-s3-bucket-stack \
+            --parameter-overrides BucketName=${{ secrets.BUCKET.NAME }} Region=${{ secrets.MY_AWS_REGION }} \
+            --capabilities CAPABILITY_NAMED_IAM
+            
+
+
+
+      
