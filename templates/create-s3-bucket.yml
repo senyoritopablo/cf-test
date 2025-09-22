@@ -5,7 +5,7 @@ Resources:
   MyS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: paul-cf-bucket  # Replace with your unique bucket name
+      BucketName: my-cfn-bucket  # Replace with your unique bucket name
       
 Outputs:
   S3BucketName:
