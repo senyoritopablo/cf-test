@@ -1,13 +1,126 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Simple S3 Bucket Template
 
+Parameters:
+  DynamoDBTableName:
+    Type: String
+    Description: Name for the DynamoDB table.
+    Default: MyCombinedTable
+  ReadCapacityUnits:
+    Type: Number
+    Description: Provisioned read capacity for the DynamoDB table.
+    Default: 5
+  WriteCapacityUnits:
+    Type: Number
+    Description: Provisioned write capacity for the DynamoDB table.
+    Default: 5
+  LambdaFunctionName:
+    Type: String
+    Description: Name for the Lambda function.
+    Default: MyCombinedLambda
+  Handler:
+    Type: String
+    Description: The function entry point in your Lambda code.
+    Default: index.lambda_handler
+  Runtime:
+    Type: String
+    Description: The runtime environment for the Lambda function.
+    Default: python3.9
+  MemorySize:
+    Type: Number
+    Description: The amount of memory that your function has access to.
+    Default: 128
+  Timeout:
+    Type: Number
+    Description: The amount of time that Lambda allows a function to run before stopping it.
+    Default: 30
+  S3BucketForLambdaCode:
+    Type: String
+    Description: The S3 bucket where the Lambda deployment package is stored.
+  S3KeyForLambdaCode:
+    Type: String
+    Description: The S3 key (file name) of the Lambda deployment package (e.g., my_lambda_code.zip).
+    
 Resources:
   MyS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: my-s3-cfn-bucket-paul  # Replace with your unique bucket name
+    # DynamoDB Table
+  MyDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref DynamoDBTableName
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref ReadCapacityUnits
+        WriteCapacityUnits: !Ref WriteCapacityUnits
+
+  # IAM Role for Lambda Functionx
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !GetAtt MyDynamoDBTable.Arn
+
+  # Lambda Function
+  MyLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Handler: !Ref Handler
+      Runtime: !Ref Runtime
+      MemorySize: !Ref MemorySize
+      Timeout: !Ref Timeout
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref S3BucketForLambdaCode
+        S3Key: !Ref S3KeyForLambdaCode
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTableName   
       
 Outputs:
   S3BucketName:
     Description: Name of the created S3 bucket
     Value: !Ref MyS3Bucket
+  DynamoDBTableNameOutput:
+    Description: The name of the DynamoDB table.
+    Value: !Ref MyDynamoDBTable
+  DynamoDBTableArnOutput:
+    Description: The ARN of the DynamoDB table.
+    Value: !GetAtt MyDynamoDBTable.Arn
+  LambdaFunctionNameOutput:
+    Description: The name of the Lambda function.
+    Value: !Ref MyLambdaFunction
+  LambdaFunctionArnOutput:
+    Description: The ARN of the Lambda function.
+    Value: !GetAtt MyLambdaFunction.Arn  
